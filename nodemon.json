@@ -1,0 +1,7 @@
+{
+  "watch": ["*.js", "*.json"],
+  "ignore": ["node_modules", ".wwebjs_auth", "*.log"],
+  "ext": "js,json",
+  "exec": "node index.js",
+  "delay": "1000"
+}

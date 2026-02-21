@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Open trulychat — WhatsApp</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f8f9fc;
+            --surface: #ffffff;
+            --surface-2: #f1f3f9;
+            --border: #e2e6f0;
+            --text: #1a1d2e;
+            --text-muted: #5c6378;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --success: #10b981;
+            --success-bg: #d1fae5;
+            --shadow: 0 4px 20px rgba(99, 102, 241, 0.08);
+            --shadow-lg: 0 12px 40px rgba(99, 102, 241, 0.12);
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Montserrat", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.5s ease-out;
+            overflow: hidden;
+        }
+
+        .app-layout {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+        }
+
+        .settings-panel {
+            width: 380px;
+            min-width: 320px;
+            flex-shrink: 0;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .messages-panel {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        .messages-panel-header {
+            flex-shrink: 0;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .messages-panel-header h1 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .messages-panel-content {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1.25rem 1.5rem;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .settings-panel h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin: 0 0 0.75rem 0;
+            letter-spacing: -0.02em;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* API Key section */
+        .api-key-wrap {
+            width: 100%;
+            animation: slideDown 0.5s ease-out 0.1s both;
+        }
+
+        .api-key-wrap.hidden {
+            display: none !important;
+        }
+
+        .api-key-panel {
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .api-key-panel label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .api-key-panel p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0 0 0.75rem 0;
+            line-height: 1.4;
+        }
+
+        .api-key-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .api-key-row input {
+            flex: 1;
+            font-family: "Montserrat", sans-serif;
+            font-size: 0.9rem;
+            padding: 0.65rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            color: var(--text);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .api-key-row input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .api-key-row input::placeholder {
+            color: #9ca3af;
+        }
+
+        .btn {
+            font-family: "Montserrat", sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 0.65rem 1.25rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+        }
+
+        .api-key-success {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--success);
+            margin-top: 0.5rem;
+            animation: popIn 0.3s ease-out;
+        }
+
+        .api-key-success.visible {
+            display: flex;
+        }
+
+        .api-key-success .btn-link {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0 0.25rem;
+            margin-left: 0.35rem;
+            text-decoration: underline;
+            font-family: inherit;
+        }
+
+        .api-key-success .btn-link:hover {
+            color: var(--accent-hover);
+        }
+
+        .config-error-banner {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+            color: #b91c1c;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 2px 12px rgba(220, 38, 38, 0.08);
+        }
+
+        .config-error-banner.hidden {
+            display: none !important;
+        }
+
+        .config-error-banner .icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .upload-chat-wrap {
+            width: 100%;
+            animation: slideDown 0.5s ease-out 0.12s both;
+        }
+
+        .upload-chat-panel {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.08);
+        }
+
+        .upload-chat-panel label:not(.checkbox-label) {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-chat-panel p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0 0 0.75rem 0;
+            line-height: 1.4;
+        }
+
+        .upload-form .upload-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .upload-form input[type="file"] {
+            font-family: "Montserrat", sans-serif;
+            font-size: 0.85rem;
+        }
+
+        .checkbox-label {
+            display: flex !important;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text);
+            cursor: pointer;
+            margin: 0 !important;
+        }
+
+        .checkbox-label input {
+            width: 1rem;
+            height: 1rem;
+            accent-color: var(--accent);
+        }
+
+        .upload-status {
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            min-height: 1.4em;
+        }
+
+        .upload-status.success {
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        .upload-status.error {
+            color: #dc2626;
+        }
+
+        .chat-already-uploaded {
+            margin-bottom: 0.75rem;
+            padding: 0.6rem 0.9rem;
+            background: rgba(16, 185, 129, 0.12);
+            border-radius: 10px;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .chat-uploaded-badge {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .chat-uploaded-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0.25rem 0 0 0;
+        }
+
+        .chats-list-wrap {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .chats-list-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        #chatsList {
+            list-style: none;
+            margin: 0.35rem 0 0 0;
+            padding: 0;
+            font-size: 0.85rem;
+            color: var(--text);
+        }
+
+        #chatsList li {
+            padding: 0.2rem 0;
+        }
+
+        #chatsList li.closest {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .panel {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            width: 100%;
+            text-align: center;
+            box-shadow: var(--shadow);
+            animation: slideUp 0.5s ease-out 0.15s both;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #qrSection {
+            margin-bottom: 1.5rem;
+        }
+
+        #qrSection img {
+            display: block;
+            margin: 0 auto 1rem;
+            border-radius: 12px;
+            background: #fff;
+            padding: 14px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            animation: qrPulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes qrPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.92;
+                transform: scale(1.01);
+            }
+        }
+
+        #qrSection p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        #readySection {
+            display: none;
+            padding: 1rem 0;
+        }
+
+        #readySection.visible {
+            display: block;
+            animation: popIn 0.4s ease-out;
+        }
+
+        #readySection .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--success-bg);
+            color: #047857;
+            padding: 0.55rem 1.1rem;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        #readySection .badge::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.1);
+            }
+        }
+
+        .messages-wrap {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            animation: slideUp 0.5s ease-out 0.2s both;
+        }
+
+        #messagesList {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        #messagesList li {
+            text-align: left;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            animation: messageIn 0.35s ease-out;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            display: flex;
+            gap: 0.85rem;
+            align-items: flex-start;
+        }
+
+        #messagesList li .message-avatar {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        #messagesList li .message-body-wrap {
+            flex: 1;
+            min-width: 0;
+        }
+
+        @keyframes messageIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #messagesList .from {
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 0.9rem;
+            margin-bottom: 0.35rem;
+        }
+
+        #messagesList .body {
+            color: var(--text);
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        #messagesList .time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        #messagesList .media-badge {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+        }
+
+        .messages-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <aside class="settings-panel">
+            <h2>Settings</h2>
+            <div class="api-key-wrap" id="apiKeySection">
+                <div class="api-key-panel">
+                    <label for="apiKeyInput">OpenAI API Key</label>
+                    <p id="apiKeyHint">Not found in environment. Enter your key below (stored in your browser cookie).</p>
+                    <div class="api-key-form" id="apiKeyForm">
+                        <div class="api-key-row">
+                            <input type="password" id="apiKeyInput" placeholder="sk-..." autocomplete="off" />
+                            <button type="button" class="btn btn-primary" id="apiKeySubmit">Save</button>
+                        </div>
+                    </div>
+                    <div class="api-key-success" id="apiKeySuccess">
+                        ✓ Key saved. Bot can reply now.
+                        <button type="button" class="btn-link" id="changeKeyBtn">Change key</button>
+                        <button type="button" class="btn-link" id="clearKeyBtn">Clear key</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div id="qrSection">
+                    <img id="qrImage" alt="QR Code" style="display: none" />
+                    <p>Scan with WhatsApp on your phone</p>
+                </div>
+                <div id="readySection">
+                    <span class="badge">WhatsApp logged in</span>
+                </div>
+            </div>
+
+            <div class="upload-chat-wrap" id="uploadChatSection">
+                <div class="upload-chat-panel">
+                    <div class="chat-already-uploaded" id="chatAlreadyUploaded" style="display: none;">
+                        <span class="chat-uploaded-badge">✓ Chat already uploaded</span>
+                        <p class="chat-uploaded-hint">Reference chats are stored locally. You can add more below.</p>
+                    </div>
+                    <label>Upload a chat to improve replies</label>
+                    <p>Export a WhatsApp chat (with your closest person) as .txt and upload it. The bot will use it to match your real style and tone.</p>
+                    <form id="uploadChatForm" class="upload-form">
+                        <div class="upload-row">
+                            <input type="file" id="chatFileInput" accept=".txt" required />
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="asClosestCheckbox" name="asClosest" />
+                                Use as <strong>closest person</strong> chat (main style reference)
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="uploadChatBtn">Upload chat</button>
+                    </form>
+                    <div class="upload-status" id="uploadStatus"></div>
+                    <div class="chats-list-wrap">
+                        <span class="chats-list-label">Reference chats:</span>
+                        <ul id="chatsList"></ul>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="messages-panel">
+            <header class="messages-panel-header">
+                <h1>Open trulychat — Incoming messages</h1>
+            </header>
+            <div class="messages-panel-content">
+                <div class="config-error-banner hidden" id="configErrorBanner">
+                    <span class="icon">⚠️</span>
+                    <span>OpenAI key and personal chat are required to process SMS. Add your API key in Settings and upload a chat (e.g. closest person) to enable replies.</span>
+                </div>
+                <div class="messages-wrap">
+                    <p class="messages-empty" id="messagesEmpty">No messages yet. When someone sends a WhatsApp message, it will appear here.</p>
+                    <ul id="messagesList"></ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const apiKeySection = document.getElementById("apiKeySection");
+        const apiKeyInput = document.getElementById("apiKeyInput");
+        const apiKeySubmit = document.getElementById("apiKeySubmit");
+        const apiKeySuccess = document.getElementById("apiKeySuccess");
+        const qrSection = document.getElementById("qrSection");
+        const qrImage = document.getElementById("qrImage");
+        const readySection = document.getElementById("readySection");
+        const messagesList = document.getElementById("messagesList");
+
+        const apiKeyForm = document.getElementById("apiKeyForm");
+        const changeKeyBtn = document.getElementById("changeKeyBtn");
+        const clearKeyBtn = document.getElementById("clearKeyBtn");
+        const chatAlreadyUploaded = document.getElementById("chatAlreadyUploaded");
+        const configErrorBanner = document.getElementById("configErrorBanner");
+
+        function showApiKeyForm(show) {
+            apiKeyForm.style.display = show ? "block" : "none";
+            apiKeySuccess.classList.toggle("visible", !show);
+        }
+
+        function updateConfigErrorBanner(hasApiKey, hasChats) {
+            const missing = !hasApiKey || !hasChats;
+            if (configErrorBanner) {
+                configErrorBanner.classList.toggle("hidden", !missing);
+            }
+        }
+
+        async function checkConfig() {
+            try {
+                const res = await fetch("/api/config");
+                const data = await res.json();
+                if (data.hasApiKey) {
+                    showApiKeyForm(false);
+                } else {
+                    showApiKeyForm(true);
+                }
+                updateConfigErrorBanner(!!data.hasApiKey, !!data.hasChats);
+            } catch (_) {
+                showApiKeyForm(true);
+                updateConfigErrorBanner(false, false);
+            }
+        }
+
+        async function checkApiKey() {
+            await checkConfig();
+        }
+
+        apiKeySubmit.addEventListener("click", async function() {
+            const key = apiKeyInput.value.trim();
+            if (!key) return;
+            try {
+                const res = await fetch("/api/set-key", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        apiKey: key
+                    }),
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    apiKeyInput.value = "";
+                    showApiKeyForm(false);
+                    checkConfig();
+                } else {
+                    alert(data.error || "Failed to save key");
+                }
+            } catch (e) {
+                alert("Failed to save key");
+            }
+        });
+
+        changeKeyBtn.addEventListener("click", function() {
+            showApiKeyForm(true);
+        });
+
+        clearKeyBtn.addEventListener("click", async function() {
+            try {
+                await fetch("/api/clear-key", {
+                    method: "POST"
+                });
+                showApiKeyForm(true);
+                checkConfig();
+            } catch (_) {
+                alert("Failed to clear key");
+            }
+        });
+
+        checkApiKey();
+
+        async function loadChatsList() {
+            try {
+                const res = await fetch("/api/chats");
+                const data = await res.json();
+                const list = document.getElementById("chatsList");
+                list.innerHTML = "";
+                if (data.files && data.files.length) {
+                    chatAlreadyUploaded.style.display = "block";
+                    data.files.forEach((f) => {
+                        const li = document.createElement("li");
+                        li.textContent = f.name + (f.isClosest ? " (closest person)" : "");
+                        if (f.isClosest) li.classList.add("closest");
+                        list.appendChild(li);
+                    });
+                } else {
+                    chatAlreadyUploaded.style.display = "none";
+                    list.innerHTML = "<li>No chats uploaded yet. Upload a .txt export above.</li>";
+                }
+            } catch (_) {
+                document.getElementById("chatsList").innerHTML = "<li>Could not load list.</li>";
+            }
+        }
+
+        loadChatsList();
+
+        document.getElementById("uploadChatForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById("chatFileInput");
+            const asClosest = document.getElementById("asClosestCheckbox").checked;
+            const statusEl = document.getElementById("uploadStatus");
+            const btn = document.getElementById("uploadChatBtn");
+            if (!fileInput.files || !fileInput.files[0]) {
+                statusEl.textContent = "Choose a .txt file first.";
+                statusEl.className = "upload-status error";
+                return;
+            }
+            const formData = new FormData();
+            formData.append("chat", fileInput.files[0]);
+            formData.append("asClosest", asClosest ? "true" : "false");
+            btn.disabled = true;
+            statusEl.textContent = "Uploading…";
+            statusEl.className = "upload-status";
+            try {
+                const res = await fetch("/api/upload-chat", {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    statusEl.textContent = data.message || "Uploaded.";
+                    statusEl.className = "upload-status success";
+                    fileInput.value = "";
+                    loadChatsList();
+                    checkConfig();
+                } else {
+                    statusEl.textContent = data.error || "Upload failed.";
+                    statusEl.className = "upload-status error";
+                }
+            } catch (err) {
+                statusEl.textContent = "Upload failed. Try again.";
+                statusEl.className = "upload-status error";
+            }
+            btn.disabled = false;
+        });
+
+        const socket = io();
+
+        socket.on("qr", function(data) {
+            qrSection.classList.remove("hidden");
+            readySection.classList.remove("visible");
+            if (data && data.dataUrl) {
+                qrImage.src = data.dataUrl;
+                qrImage.style.display = "block";
+            }
+        });
+
+        socket.on("ready", function() {
+            qrSection.classList.add("hidden");
+            readySection.classList.add("visible");
+        });
+
+        const messagesEmpty = document.getElementById("messagesEmpty");
+
+        socket.on("message", function(msg) {
+            if (messagesEmpty) messagesEmpty.style.display = "none";
+            const displayName = msg.fromName || msg.from || "Unknown";
+            const initial = (displayName.charAt(0) || "?").toUpperCase();
+            const li = document.createElement("li");
+            const avatar = document.createElement("div");
+            avatar.className = "message-avatar";
+            avatar.textContent = initial;
+            const bodyWrap = document.createElement("div");
+            bodyWrap.className = "message-body-wrap";
+            const from = document.createElement("div");
+            from.className = "from";
+            from.textContent = displayName;
+            const body = document.createElement("div");
+            body.className = "body";
+            body.textContent = msg.body || "(no text)";
+            const time = document.createElement("div");
+            time.className = "time";
+            time.textContent = msg.timestamp ? new Date(msg.timestamp * 1000).toLocaleString() : "";
+            bodyWrap.appendChild(from);
+            bodyWrap.appendChild(body);
+            bodyWrap.appendChild(time);
+            if (msg.hasMedia) {
+                const media = document.createElement("div");
+                media.className = "media-badge";
+                media.textContent = "📎 Media attached";
+                bodyWrap.appendChild(media);
+            }
+            li.appendChild(avatar);
+            li.appendChild(bodyWrap);
+            messagesList.appendChild(li);
+            const contentEl = document.querySelector(".messages-panel-content");
+            if (contentEl) contentEl.scrollTop = contentEl.scrollHeight;
+        });
+    </script>
+</body>
+
+</html>

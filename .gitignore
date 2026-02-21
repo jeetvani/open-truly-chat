@@ -1,0 +1,9 @@
+# Folders
+wwwebauth/
+files/
+
+# Environment
+.env
+.env.*
+!.env.example
+node_modules/

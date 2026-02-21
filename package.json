@@ -1,0 +1,37 @@
+{
+    "name": "open-truly-chat",
+    "version": "1.0.0",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "build": "cd client && npm run build",
+        "dev": "nodemon",
+        "pm2:start": "pm2 start ecosystem.config.cjs",
+        "pm2:stop": "pm2 stop open-truly-chat",
+        "pm2:restart": "pm2 restart open-truly-chat",
+        "pm2:logs": "pm2 logs open-truly-chat",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "cookie-parser": "^1.4.7",
+        "dotenv": "^17.2.3",
+        "express": "^5.2.1",
+        "fs": "^0.0.1-security",
+        "multer": "^2.0.2",
+        "open": "^11.0.0",
+        "openai": "^6.18.0",
+        "path": "^0.12.7",
+        "qrcode": "^1.5.4",
+        "qrcode-terminal": "^0.12.0",
+        "socket.io": "^4.8.3",
+        "whatsapp-web.js": "^1.34.6"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.0",
+        "pm2": "^5.3.0"
+    },
+    "description": ""
+}
