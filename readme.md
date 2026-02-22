@@ -41,5 +41,5 @@ Ideal when you're offline, traveling, or want friends to feel you're still aroun
 1. Clone the repository
 
    ```bash
-   git clone https://github.com/YOUR_USERNAME/open-truly-chat.git
+   git clone https://github.com/jeetvani/open-truly-chat.git
    cd open-truly-chat
