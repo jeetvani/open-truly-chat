@@ -1,3 +1,4 @@
+require("dotenv").config();
 const path = require("path");
 const fs = require("fs");
 const http = require("http");
@@ -71,7 +72,7 @@ app.get("/api/config", (req, res) => {
       hasChats = files.length > 0;
       hasClosestPerson = files.includes("closest-person.txt");
     }
-  } catch (_) {}
+  } catch (_) { }
   res.json({ hasApiKey: !!getApiKey(), hasChats, hasClosestPerson });
 });
 
@@ -140,7 +141,7 @@ const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
     headless: true,
-    executablePath: "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   },
 });
@@ -172,7 +173,7 @@ client.on("message", async (msg) => {
   try {
     const contact = await msg.getContact();
     fromName = contact.name || contact.pushname || contact.shortName || msg.from;
-  } catch (_) {}
+  } catch (_) { }
 
   const payload = {
     id: (msg.id && msg.id._serialized) ? msg.id._serialized : `${msg.from}-${Date.now()}`,
@@ -195,7 +196,7 @@ client.on("message", async (msg) => {
     const chatId = (chat.id && chat.id._serialized) ? chat.id._serialized : String(chat.id || "");
     const isStatusChat = /status@broadcast|@\w*broadcast\b/.test(chatId);
     isPrivate = !chat.isGroup && !isStatusChat;
-  } catch (_) {}
+  } catch (_) { }
   if (!isPrivate) return;
 
   if (!text) return;
@@ -217,6 +218,6 @@ client.on("message", async (msg) => {
 server.listen(PORT, () => {
   const url = `http://localhost:${PORT}`;
   console.log(`Web app: ${url}`);
-  open(url).catch(() => {});
+  open(url).catch(() => { });
   client.initialize();
 });
