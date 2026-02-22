@@ -1,8 +1,24 @@
 # Open-TrulyChat
 
-**Open-TrulyChat** is an **open-source**, self-hosted WhatsApp auto-reply bot that learns **your** unique texting style from exported chat histories (especially from your closest conversations) and replies in a way that feels authentically like you — powered by OpenAI.
+**Open-TrulyChat** is an open-source, self-hosted WhatsApp auto-reply bot that learns your unique texting style and replies like your digital twin — powered by OpenAI.
 
-It runs a simple web interface where you can:
+---
+
+## 📚 Documentation
+
+- [What is Open Truly Chat?](docs/what-is-open-truly-chat.md)
+- [Features](docs/features.md)
+- [How to Use](docs/how-to-use.md)
+- [Architecture](docs/architecture.md)
+- [Extending](docs/extending.md)
+- [Setup & Deployment Guide](docs/setup-guide.md)
+- [Example Environment Variables](env.example)
+
+---
+
+## Quick Overview
+
+Open-TrulyChat runs a simple web interface where you can:
 - Upload .txt chat exports (WhatsApp format)
 - Mark one special chat as your "closest person" reference (for strongest style matching)
 - Set your OpenAI API key
@@ -11,15 +27,7 @@ It runs a simple web interface where you can:
 
 Ideal when you're offline, traveling, or want friends to feel you're still around — all while keeping everything local and private.
 
-## Features
-
-- **Style imitation** — Draws from your real chat history (especially "closest-person.txt") to match tone, emojis, slang, message length, quirks, etc.
-- **Private chats only** — Ignores groups and status messages
-- **Web dashboard** — Upload chats, configure API key, monitor connection
-- **QR login** using whatsapp-web.js + persistent sessions (LocalAuth)
-- **Safe file uploads** — .txt only, 10 MB limit, sanitized filenames
-- **Real-time feedback** — Socket.io for QR code, ready status, and incoming messages
-- **Graceful fallbacks** — Polite errors when no API key or something fails
+---
 
 ## Demo Screenshots
 
@@ -29,17 +37,11 @@ Ideal when you're offline, traveling, or want friends to feel you're still aroun
 - QR code during WhatsApp linking
 - Example incoming message + bot's style-matched reply
 
+---
+
 ## Prerequisites
 
 - Node.js ≥ 18
 - OpenAI API key (compatible with GPT models)
 - Brave Browser (or Chrome) installed — used by Puppeteer (path is configurable)
-- Your WhatsApp account (links to **your** number)
-
-## Installation
-
-1. Clone the repository
-
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/open-truly-chat.git
-   cd open-truly-chat
+- Your WhatsApp account (links to your number)
